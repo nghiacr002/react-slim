@@ -1,0 +1,24 @@
+upstream reactors  {
+  server unix:/tmp/LegoAsync.worker1.sock fail_timeout=1;
+  server unix:/tmp/LegoAsync.worker2.sock fail_timeout=1;
+  server unix:/tmp/LegoAsync.worker3.sock fail_timeout=1;
+  server unix:/tmp/LegoAsync.worker4.sock fail_timeout=1;
+}
+server {
+  listen 8777; 
+  real_ip_header X-Forwarded-For;
+  real_ip_recursive on;
+  location / {
+    proxy_set_header  Host $host;
+    proxy_set_header  X-Real-IP $remote_addr;
+    proxy_set_header  X-Forwarded-Proto https;
+    proxy_set_header  X-Forwarded $remote_addr;
+    proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Host $remote_addr;
+    if (!-f $request_filename) {
+      proxy_pass http://reactors;
+      break;
+    }
+    try_files $uri $uri/ /index.php?$query_string;
+  }
+}
